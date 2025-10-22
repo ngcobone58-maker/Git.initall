@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Talking Aviator — Random Joke Generator</title>
+  <style>
+    :root{
+      --bg1: #1b1f3a;
+      --bg2: #2a254f;
+      --card: rgba(255,255,255,0.06);
+      --accent: #ffd166;
+      --text: #f4f4f9;
+    }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text);}    
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box}
+    .card{width:100%;max-width:720px;background:var(--card);border-radius:16px;padding:26px;box-shadow:0 6px 30px rgba(0,0,0,0.4);backdrop-filter: blur(6px);}    
+    .header{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+    h1{font-size:1.25rem;margin:0}
+    .controls{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+    button{background:var(--accent);border:none;padding:10px 16px;border-radius:10px;color:#222;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.25)}
+    button:active{transform:translateY(1px)}
+    .small{background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--text);padding:8px;border-radius:8px}
+    .muted{opacity:0.85;font-size:0.9rem}
+    .layout{display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:start}
+    /* Aviator */
+    .aviator{width:220px;height:220px;background:linear-gradient(180deg,#3b82f6,#1e40af);border-radius:18px;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;user-select:none;transition:transform 0.18s}
+    .aviator .scene{width:160px;height:160px;position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column}
+    .head{width:110px;height:110px;background:#ffd9a3;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:inset 0 -8px 18px rgba(0,0,0,0.08)}
+    .goggles{width:94%;display:flex;justify-content:space-between;align-items:center;padding:6px 6px 0 6px;box-sizing:border-box}
+    .goggle{width:38%;height:28px;background:#2b2b2b;border-radius:8px;border:6px solid #c9c9c9;box-sizing:content-box;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .goggle-inner{width:80%;height:70%;background:linear-gradient(180deg,#e9f2ff,#d6e9ff);border-radius:4px;box-shadow:inset 0 3px 12px rgba(0,0,0,0.06)}
+    .scarves{position:absolute;left:0;right:0;bottom:6px;height:26px;display:flex;align-items:center;justify-content:center}
+    .scarf{width:60%;height:14px;background:#c2410c;border-radius:6px;box-shadow:inset 0 -3px 6px rgba(0,0,0,0.12)}
+    .mouth{width:44px;height:18px;background:#2b2b2b;border-radius:12px;margin-top:8px;transform-origin:center;transition:transform 0.06s linear}
+    /* speaking animation */
+    .aviator.speaking .mouth{animation:mouthMove 160ms linear infinite}
+    @keyframes mouthMove{
+      0%{transform:scaleY(1)}
+      25%{transform:scaleY(0.55)}
+      50%{transform:scaleY(1.2)}
+      75%{transform:scaleY(0.7)}
+      100%{transform:scaleY(1)}
+    }
+    /* head bob */
+    .aviator.speaking{animation: headBob 700ms ease-in-out infinite}
+    @keyframes headBob{
+      0%{transform:translateY(0)}
+      50%{transform:translateY(-4px)}
+      100%{transform:translateY(0)}
+    }
+    /* speech bubble / text area */
+    .content{padding:6px 10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;min-height:140px}
+    .joke-setup{font-size:1.05rem;opacity:0.98;margin-bottom:10px}
+    .joke-punchline{font-weight:700;margin-bottom:6px}
+    .status{font-size:0.86rem;color:rgba(255,255,255,0.75)}
+    .options{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    label.switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+    input[type="checkbox"]{width:18px;height:18px}
+    .hint{font-size:0.86rem;opacity:0.85;margin-top:8px}
+    footer{margin-top:14px;font-size:0.85rem;color:rgba(255,255,255,0.66)}
+    @media(max-width:640px){.layout{grid-template-columns:1fr;}.aviator{width:200px;height:200px;margin:auto}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" role="main" aria-labelledby="title">
+      <div class="header">
+        <div>
+          <h1 id="title">Talking Aviator — Random Joke Generator</h1>
+          <div class="muted">Click the aviator or "Get Joke" to fetch and hear a joke.</div>
+        </div>
+      </div>
+
+      <div class="layout">
+        <!-- Aviator panel -->
+        <div>
+          <div class="aviator" id="aviator" role="button" tabindex="0" aria-pressed="false" aria-label="Aviator: click to hear a joke">
+            <div class="scene" aria-hidden="true">
+              <div class="head" id="head">
+                <div class="goggles" aria-hidden="true">
+                  <div class="goggle"><div class="goggle-inner"></div></div>
+                  <div class="goggle"><div class="goggle-inner"></div></div>
+                </div>
+                <div class="mouth" id="mouth" aria-hidden="true"></div>
+              </div>
+              <div class="scarves"><div class="scarf"></div></div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;text-align:center;">
+            <div class="hint">Tip: click the aviator to repeat the last joke out loud.</div>
+          </div>
+        </div>
+
+        <!-- Content panel -->
+        <div>
+          <div class="controls">
+            <button id="getJokeBtn">Get Joke</button>
+            <button id="speakBtn" class="small">Tell me the last one</button>
+            <div class="options" style="margin-left:auto">
+              <label class="switch" title="Auto speak when a new joke is fetched">
+                <input type="checkbox" id="autoSpeak" checked />
+                <span class="muted">Auto-speak</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="content" id="content" aria-live="polite">
+            <div class="joke-setup" id="jokeSetup">Loading a joke...</div>
+            <div class="joke-punchline" id="jokePunchline"></div>
+            <div class="status" id="status">Status: idle</div>
+          </div>
+
+          <footer>Uses the Official Joke API (https://official-joke-api.appspot.com). Uses your browser's speech synthesis.</footer>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration: API endpoint
+    const JOKE_API = 'https://official-joke-api.appspot.com/random_joke';
+
+    // Elements
+    const aviatorEl = document.getElementById('aviator');
+    const getJokeBtn = document.getElementById('getJokeBtn');
+    const speakBtn = document.getElementById('speakBtn');
+    const autoSpeakChk = document.getElementById('autoSpeak');
+    const jokeSetupEl = document.getElementById('jokeSetup');
+    const jokePunchlineEl = document.getElementById('jokePunchline');
+    const statusEl = document.getElementById('status');
+
+    // State
+    let lastJoke = null;
+    let currentUtterances = [];
+
+    // Utilities
+    function setStatus(text) { statusEl.textContent = 'Status: ' + text; }
+    function setSpeaking(on){
+      aviatorEl.classList.toggle('speaking', !!on);
+      aviatorEl.setAttribute('aria-pressed', !!on);
+    }
+
+    // Fetch a random joke
+    async function fetchJoke(){
+      setStatus('fetching joke...');
+      jokeSetupEl.textContent = 'Loading joke...';
+      jokePunchlineEl.textContent = '';
+      try {
+        const res = await fetch(JOKE_API, {cache: "no-store"});
+        if(!res.ok) throw new Error('Network response not OK: ' + res.status);
+        const data = await res.json();
+        lastJoke = data;
+        jokeSetupEl.textContent = data.setup || '';
+        jokePunchlineEl.textContent = data.punchline || '';
+        setStatus('joke loaded');
+        if(autoSpeakChk.checked){
+          speakJoke(data.setup, data.punchline);
+        }
+      } catch(err) {
+        console.error(err);
+        jokeSetupEl.textContent = "Oops — couldn't load a joke.";
+        jokePunchlineEl.textContent = "";
+        setStatus('error fetching joke');
+      }
+    }
+
+    // Speak a joke using Web Speech API
+    // Speaks setup then punchline with a short pause. Animates aviator during speaking.
+    function speakJoke(setup, punchline){
+      if(!('speechSynthesis' in window)){
+        setStatus('speech synthesis not supported in this browser');
+        return;
+      }
+      // Cancel any existing utterances
+      window.speechSynthesis.cancel();
+      currentUtterances.forEach(u => {
+        u.onstart = u.onend = null;
+      });
+      currentUtterances = [];
+
+      setStatus('speaking...');
+      // Two utterances so we can animate and time them separately
+      const u1 = new SpeechSynthesisUtterance(setup || '');
+      const u2 = new SpeechSynthesisUtterance(punchline || '');
+
+      // Voice selection: try to pick a friendly voice
+      const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+      if(voices && voices.length){
+        // prefer English voices
+        const en = voices.find(v => /en(-|_)?/i.test(v.lang)) || voices[0];
+        if(en) { u1.voice = en; u2.voice = en; }
+      }
+
+      // Adjust rate/pitch for a pleasant aviator voice
+      u1.rate = 0.98;
+      u1.pitch = 0.98;
+      u2.rate = 0.98;
+      u2.pitch = 0.98;
+
+      // Animate when speech starts and stops
+      u1.onstart = () => setSpeaking(true);
+      u1.onend = () => {
+        // small pause then start punchline
+        setTimeout(()=> {
+          // highlight punchline visually just before speaking
+          if(jokePunchlineEl) jokePunchlineEl.style.opacity = '0.85';
+          window.speechSynthesis.speak(u2);
+        }, 450);
+      };
+      u2.onend = () => {
+        setSpeaking(false);
+        setTimeout(()=> setStatus('idle'), 350);
+      };
+      u1.onerror = u2.onerror = (e) => {
+        console.error('Speech error', e);
+        setSpeaking(false);
+        setStatus('speech error');
+      };
+
+      // Keep references (so we can cancel later)
+      currentUtterances = [u1,u2];
+
+      // Speak setup first
+      window.speechSynthesis.speak(u1);
+    }
+
+    // Re-speak last joke (if present) otherwise fetch new
+    function repeatOrFetch(){
+      if(lastJoke){
+        speakJoke(lastJoke.setup, lastJoke.punchline);
+      } else {
+        fetchJoke();
+      }
+    }
+
+    // Event wiring
+    getJokeBtn.addEventListener('click', fetchJoke);
+    speakBtn.addEventListener('click', () => repeatOrFetch());
+    aviatorEl.addEventListener('click', () => repeatOrFetch());
+    // keyboard accessibility: Enter/Space triggers aviator
+    aviatorEl.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); repeatOrFetch(); }
+    });
+
+    // Load a voice list if it's async (Chrome sometimes loads voices after)
+    if ('speechSynthesis' in window && typeof window.speechSynthesis.getVoices === 'function') {
+      // Try to warm up voices list
+      window.speechSynthesis.getVoices();
+      // Some browsers fire onvoiceschanged when ready
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
+    // Kick off first joke on load
+    fetchJoke();
+  </script>
+</body>
+</html>
