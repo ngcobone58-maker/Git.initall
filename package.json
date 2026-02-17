@@ -1,0 +1,1 @@
+{\n  "name": "ai-bot-guide-app",\n  "version": "1.0.0",\n  "description": "A starter code for an AI Bot Guide App.",\n  "main": "index.js",\n  "scripts": {\n    "start": "node index.js"\n  },\n  "dependencies": {}\n}
